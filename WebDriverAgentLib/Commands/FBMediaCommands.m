@@ -8,7 +8,7 @@
 #import "FBRouteRequest.h"
 
 /** Bumped whenever this API changes. */
-static NSString *const FBMediaApiVersion = @"pod.2";
+static NSString *const FBMediaApiVersion = @"pod.3";
 /** The largest decoded chunk accepted (the pod sends 3 MiB). */
 static const NSUInteger FBMediaMaxChunkBytes = 4 * 1024 * 1024;
 /** How long a save may take before the pod hears an error. */

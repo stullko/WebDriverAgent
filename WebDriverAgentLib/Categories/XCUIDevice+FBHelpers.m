@@ -109,7 +109,10 @@ NSDictionary<NSString *, NSNumber *> *fb_availableHandGestureNames(void) {
 
 @implementation XCUIDevice (FBHelpers)
 
-static bool fb_isLocked;
+// pod: the lock state is read from notifyd each time it is needed. A bool kept up to date only by the change
+// notification started out "unlocked" in a runner launched while the phone was already locked: LOCK then timed out
+// and unlock did nothing until the phone was unlocked by hand.
+static int fb_lockStateToken = NOTIFY_TOKEN_INVALID;
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wobjc-load-method"
@@ -123,15 +126,17 @@ static bool fb_isLocked;
 
 + (void)fb_registerAppforDetectLockState
 {
-  int notify_token;
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wstrict-prototypes"
-  notify_register_dispatch("com.apple.springboard.lockstate", &notify_token, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^(int token) {
-    uint64_t state = UINT64_MAX;
-    notify_get_state(token, &state);
-    fb_isLocked = state != 0;
-  });
-#pragma clang diagnostic pop
+  notify_register_check("com.apple.springboard.lockstate", &fb_lockStateToken);
+}
+
+static BOOL fb_isLocked(void)
+{
+  uint64_t state = 0;
+  if (fb_lockStateToken == NOTIFY_TOKEN_INVALID
+      || notify_get_state(fb_lockStateToken, &state) != NOTIFY_STATUS_OK) {
+    return NO;
+  }
+  return state != 0;
 }
 
 - (BOOL)fb_goToHomescreenWithError:(NSError **)error
@@ -141,7 +146,7 @@ static bool fb_isLocked;
 
 - (BOOL)fb_lockScreen:(NSError **)error
 {
-  if (fb_isLocked) {
+  if (fb_isLocked()) {
     return YES;
   }
 #if TARGET_OS_SIMULATOR
@@ -164,18 +169,18 @@ static bool fb_isLocked;
             timeout:FBScreenLockTimeout]
            timeoutErrorMessage:@"Timed out while waiting until the screen gets locked"]
           spinUntilTrue:^BOOL{
-            return fb_isLocked;
+            return fb_isLocked();
           } error:error];
 }
 
 - (BOOL)fb_isScreenLocked
 {
-  return fb_isLocked;
+  return fb_isLocked();
 }
 
 - (BOOL)fb_unlockScreen:(NSError **)error
 {
-  if (!fb_isLocked) {
+  if (!fb_isLocked()) {
     return YES;
   }
   [self pressButton:XCUIDeviceButtonHome];
@@ -190,7 +195,7 @@ static bool fb_isLocked;
             timeout:FBScreenLockTimeout]
            timeoutErrorMessage:@"Timed out while waiting until the screen gets unlocked"]
           spinUntilTrue:^BOOL{
-            return !fb_isLocked;
+            return !fb_isLocked();
           } error:error];
 }
 
