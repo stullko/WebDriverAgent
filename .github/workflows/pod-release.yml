@@ -1,0 +1,48 @@
+name: Pod release
+
+on:
+  push:
+    tags: ['v*-pod.*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  XCODE_VERSION: '16.4'
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
+      - name: Build WebDriverAgentRunner for real devices
+        env:
+          DERIVED_DATA_PATH: appium_wda_ios
+          SCHEME: WebDriverAgentRunner
+          WD: appium_wda_ios/Build/Products/Debug-iphoneos
+          ZIP_PKG_NAME: WebDriverAgentRunner-Runner.zip
+        run: |
+          set -euo pipefail
+          xcodebuild clean build-for-testing -project WebDriverAgent.xcodeproj -derivedDataPath "$DERIVED_DATA_PATH" \
+            -scheme "$SCHEME" -destination generic/platform=iOS CODE_SIGNING_ALLOWED=NO ARCHS=arm64
+          APP="$WD/$SCHEME-Runner.app"
+          # the Photos prompt reads its reason from the host app (the runner), not from the test bundle
+          for key in NSPhotoLibraryUsageDescription NSPhotoLibraryAddUsageDescription; do
+            /usr/libexec/PlistBuddy -c "Delete :$key" "$APP/Info.plist" 2>/dev/null || true
+            /usr/libexec/PlistBuddy -c "Add :$key string Pod saves photos and videos here for posting." "$APP/Info.plist"
+          done
+          test -f "$APP/PlugIns/WebDriverAgentRunner.xctest/WebDriverAgentRunner"
+          (cd "$WD" && zip -r "$ZIP_PKG_NAME" "$SCHEME-Runner.app" \
+            -x "$SCHEME-Runner.app/Frameworks/XC*.framework*" \
+               "$SCHEME-Runner.app/Frameworks/Testing.framework*" \
+               "$SCHEME-Runner.app/Frameworks/libXCTestSwiftSupport.dylib")
+          mv "$WD/$ZIP_PKG_NAME" .
+          shasum -a 256 "$ZIP_PKG_NAME"
+      - uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: WebDriverAgentRunner-Runner.zip

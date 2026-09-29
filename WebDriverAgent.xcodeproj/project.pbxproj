@@ -662,6 +662,7 @@
 		71BB58EF2B96511800CB9BFE /* FBVideoCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = 71BB58ED2B96511800CB9BFE /* FBVideoCommands.h */; };
 		71BB58F02B96511800CB9BFE /* FBVideoCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = 71BB58ED2B96511800CB9BFE /* FBVideoCommands.h */; };
 		71BB58F12B96511800CB9BFE /* FBVideoCommands.m in Sources */ = {isa = PBXBuildFile; fileRef = 71BB58EE2B96511800CB9BFE /* FBVideoCommands.m */; };
+		3A304F136E5DEEF375E02D93 /* FBMediaCommands.m in Sources */ = {isa = PBXBuildFile; fileRef = 8D3BF074AF5FEB93ACF72683 /* FBMediaCommands.m */; };
 		71BB58F22B96511800CB9BFE /* FBVideoCommands.m in Sources */ = {isa = PBXBuildFile; fileRef = 71BB58EE2B96511800CB9BFE /* FBVideoCommands.m */; };
 		71BB58F32B96511800CB9BFE /* FBVideoCommands.m in Sources */ = {isa = PBXBuildFile; fileRef = 71BB58EE2B96511800CB9BFE /* FBVideoCommands.m */; };
 		71BB58F62B96531900CB9BFE /* FBScreenRecordingContainer.h in Headers */ = {isa = PBXBuildFile; fileRef = 71BB58F42B96531900CB9BFE /* FBScreenRecordingContainer.h */; };
@@ -1650,6 +1651,8 @@
 		71BB58E72B96328700CB9BFE /* FBScreenRecordingRequest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBScreenRecordingRequest.m; sourceTree = "<group>"; };
 		71BB58ED2B96511800CB9BFE /* FBVideoCommands.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBVideoCommands.h; sourceTree = "<group>"; };
 		71BB58EE2B96511800CB9BFE /* FBVideoCommands.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBVideoCommands.m; sourceTree = "<group>"; };
+		BB812C9E16A95A3A80526AAF /* FBMediaCommands.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBMediaCommands.h; sourceTree = "<group>"; };
+		8D3BF074AF5FEB93ACF72683 /* FBMediaCommands.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBMediaCommands.m; sourceTree = "<group>"; };
 		71BB58F42B96531900CB9BFE /* FBScreenRecordingContainer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBScreenRecordingContainer.h; sourceTree = "<group>"; };
 		71BB58F52B96531900CB9BFE /* FBScreenRecordingContainer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBScreenRecordingContainer.m; sourceTree = "<group>"; };
 		71BD20711F86116100B36EC2 /* XCUIApplication+FBTouchAction.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCUIApplication+FBTouchAction.h"; sourceTree = "<group>"; };
@@ -2451,6 +2454,8 @@
 				EE9AB7651CAEDF0C008C271F /* FBUnknownCommands.m */,
 				71BB58ED2B96511800CB9BFE /* FBVideoCommands.h */,
 				71BB58EE2B96511800CB9BFE /* FBVideoCommands.m */,
+				BB812C9E16A95A3A80526AAF /* FBMediaCommands.h */,
+				8D3BF074AF5FEB93ACF72683 /* FBMediaCommands.m */,
 			);
 			name = Commands;
 			path = WebDriverAgentLib/Commands;
@@ -4744,6 +4749,7 @@
 				71414EDA2670A1EE003A8C5D /* LRUCacheNode.m in Sources */,
 				EE158AB91CBD456F00A3E3F0 /* FBAlertViewCommands.m in Sources */,
 				71BB58F12B96511800CB9BFE /* FBVideoCommands.m in Sources */,
+				3A304F136E5DEEF375E02D93 /* FBMediaCommands.m in Sources */,
 				71F3E7D625417FF400E0C22B /* FBSettings.m in Sources */,
 				71F3E7DB25417FF400E0C22C /* FBSettingsHandler.m in Sources */,
 				13DE7A57287CA1EC003243C6 /* FBXCElementSnapshotWrapper.m in Sources */,

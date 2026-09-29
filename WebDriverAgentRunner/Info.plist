@@ -26,5 +26,9 @@
 	<string></string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string></string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Pod saves photos and videos here for posting.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Pod saves photos and videos here for posting.</string>
 </dict>
 </plist>
