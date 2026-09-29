@@ -8,11 +8,13 @@
 #import "FBRouteRequest.h"
 
 /** Bumped whenever this API changes. */
-static NSString *const FBMediaApiVersion = @"pod.1";
+static NSString *const FBMediaApiVersion = @"pod.2";
 /** The largest decoded chunk accepted (the pod sends 3 MiB). */
 static const NSUInteger FBMediaMaxChunkBytes = 4 * 1024 * 1024;
 /** How long a save may take before the pod hears an error. */
 static const int64_t FBMediaSaveTimeoutSec = 120;
+/** Uploads left behind (a pod gone mid-upload, a save still in progress long ago) go after this long. */
+static const NSTimeInterval FBMediaStaleUploadSec = 3600;
 
 static NSString *FBMediaAuthorizationName(PHAuthorizationStatus status)
 {
@@ -86,6 +88,7 @@ static id<FBResponsePayload> FBMediaInvalid(NSString *message)
   }
   NSFileManager *fm = NSFileManager.defaultManager;
   if (0 == offset) {
+    [self removeStaleUploads];
     // a new upload (or one started over): whatever was there goes
     [fm removeItemAtPath:path error:nil];
     [fm createFileAtPath:path contents:nil attributes:nil];
@@ -133,6 +136,8 @@ static id<FBResponsePayload> FBMediaInvalid(NSString *message)
     return FBResponseWithUnknownError(error);
   }
 
+  // with limited access Photos lets the app neither find nor create an album: that change would fail the whole save
+  BOOL useAlbum = PHAuthorizationStatusLimited != [PHPhotoLibrary authorizationStatusForAccessLevel:PHAccessLevelReadWrite];
   __block NSString *localIdentifier = nil;
   __block BOOL saved = NO;
   __block NSError *saveError = nil;
@@ -149,21 +154,43 @@ static id<FBResponsePayload> FBMediaInvalid(NSString *message)
                         options:options];
     PHObjectPlaceholder *placeholder = create.placeholderForCreatedAsset;
     localIdentifier = placeholder.localIdentifier;
-    [[self albumChangeRequestNamed:album] addAssets:@[placeholder]];
+    if (useAlbum) {
+      [[self albumChangeRequestNamed:album] addAssets:@[placeholder]];
+    }
   } completionHandler:^(BOOL success, NSError *err) {
     saved = success;
     saveError = err;
     dispatch_semaphore_signal(done);
   }];
   long timedOut = dispatch_semaphore_wait(done, dispatch_time(DISPATCH_TIME_NOW, FBMediaSaveTimeoutSec * (int64_t)NSEC_PER_SEC));
-  [fm removeItemAtPath:typed error:nil];
   if (0 != timedOut) {
-    return FBResponseWithUnknownErrorFormat(@"saving to Photos took longer than %lld s", FBMediaSaveTimeoutSec);
+    // Photos may still be moving the file in: leave it (removeStaleUploads takes it within an hour) and say so,
+    // so the pod does not upload it a second time
+    return FBResponseWithUnknownErrorFormat(@"media save still in progress after %lld s; the item may still appear in Photos", FBMediaSaveTimeoutSec);
   }
+  [fm removeItemAtPath:typed error:nil];
   if (!saved) {
     return FBResponseWithUnknownError(saveError);
   }
-  return FBResponseWithObject(@{@"localIdentifier": localIdentifier ?: @""});
+  return FBResponseWithObject(@{@"localIdentifier": localIdentifier ?: @"", @"album": @(useAlbum)});
+}
+
+/** Removes pod-media-* temp files older than FBMediaStaleUploadSec. */
++ (void)removeStaleUploads
+{
+  NSFileManager *fm = NSFileManager.defaultManager;
+  NSString *dir = NSTemporaryDirectory();
+  NSDate *cutoff = [NSDate dateWithTimeIntervalSinceNow:-FBMediaStaleUploadSec];
+  for (NSString *name in [fm contentsOfDirectoryAtPath:dir error:nil]) {
+    if (![name hasPrefix:@"pod-media-"]) {
+      continue;
+    }
+    NSString *p = [dir stringByAppendingPathComponent:name];
+    NSDate *modified = [[fm attributesOfItemAtPath:p error:nil] fileModificationDate];
+    if (nil != modified && NSOrderedAscending == [modified compare:cutoff]) {
+      [fm removeItemAtPath:p error:nil];
+    }
+  }
 }
 
 /** The album's change request, creating the album when none has that title. Only inside performChanges. */
